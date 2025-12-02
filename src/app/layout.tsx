@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Motzkin Store",
-  description: "Welcome to Motzkin Store",
+  title: "Motzkin Store - School Equipment",
+  description: "Select your school, grade, and class to view your equipment list",
 };
 
 export default function RootLayout({
