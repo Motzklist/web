@@ -44,25 +44,25 @@ if "%1"=="-h" goto :show_help
 REM ============================================
 REM   PARSE PORT ARGUMENT
 REM ============================================
-set PORT=%DEFAULT_PORT%
+set "PORT=%DEFAULT_PORT%"
 if not "%1"=="" (
-    set PORT=%1
+    set "PORT=%~1"
 )
 
 REM Validate PORT is numeric only (prevent command injection)
-echo %PORT%| findstr /r "^[0-9][0-9]*$" >nul 2>&1
+echo !PORT!| findstr /r "^[0-9][0-9]*$" >nul 2>&1
 if errorlevel 1 (
-    echo %RED%Error: Invalid port number "%PORT%".%RESET%
+    echo %RED%Error: Invalid port number "!PORT!".%RESET%
     echo Port must be a numeric value.
     exit /b 1
 )
 
 REM Validate PORT is in valid range (1-65535)
-if %PORT% LSS 1 (
+if !PORT! LSS 1 (
     echo %RED%Error: Port number must be at least 1.%RESET%
     exit /b 1
 )
-if %PORT% GTR 65535 (
+if !PORT! GTR 65535 (
     echo %RED%Error: Port number must be at most 65535.%RESET%
     exit /b 1
 )
