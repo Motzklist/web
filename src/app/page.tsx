@@ -1,174 +1,174 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import {useState, useEffect} from 'react';
+import {useRouter} from 'next/navigation';
 import Layout from '@/components/Layout';
-import SearchableSelect, { SelectItem } from '@/components/SearchableSelect';
-import EquipmentList, { EquipmentData } from '@/components/EquipmentList';
-import { useAuth } from '@/contexts/AuthContext';
+import SearchableSelect, {SelectItem} from '@/components/SearchableSelect';
+import EquipmentList, {EquipmentData} from '@/components/EquipmentList';
+import {useAuth} from '@/contexts/AuthContext';
 
 export default function Home() {
-  const router = useRouter();
-  const { isAuthenticated } = useAuth();
-  const [schools] = useState<SelectItem[]>([
-    { id: 1, name: 'Begin' },
-    { id: 2, name: 'Ben-Gurion' }
-  ]);
-  const [grades, setGrades] = useState<SelectItem[]>([]);
-  const [classes, setClasses] = useState<SelectItem[]>([]);
-  const [equipmentData, setEquipmentData] = useState<EquipmentData | null>(null);
-  const [selectedEquipment, setSelectedEquipment] = useState<Set<number>>(new Set());
-  const [quantities, setQuantities] = useState<Map<number, number>>(new Map());
-  const [isLoading, setIsLoading] = useState(false);
+    const router = useRouter();
+    const {isAuthenticated} = useAuth();
+    const [schools] = useState<SelectItem[]>([
+        {id: 1, name: 'Begin'},
+        {id: 2, name: 'Ben-Gurion'}
+    ]);
+    const [grades, setGrades] = useState<SelectItem[]>([]);
+    const [classes, setClasses] = useState<SelectItem[]>([]);
+    const [equipmentData, setEquipmentData] = useState<EquipmentData | null>(null);
+    const [selectedEquipment, setSelectedEquipment] = useState<Set<number>>(new Set());
+    const [quantities, setQuantities] = useState<Map<number, number>>(new Map());
+    const [isLoading, setIsLoading] = useState(false);
 
-  // Check authentication and redirect if not authenticated
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
-    }
-  }, [isAuthenticated, router]);
+    // Check authentication and redirect if not authenticated
+    useEffect(() => {
+        if (!isAuthenticated) {
+            router.push('/login');
+        }
+    }, [isAuthenticated, router]);
 
-  // Initialize all items as selected when equipment data loads
-  useEffect(() => {
-    if (equipmentData) {
-      const allIds = new Set(equipmentData.items.map(item => item.id));
-      setSelectedEquipment(allIds);
+    // Initialize all items as selected when equipment data loads
+    useEffect(() => {
+        if (equipmentData) {
+            const allIds = new Set(equipmentData.items.map(item => item.id));
+            setSelectedEquipment(allIds);
 
-      const initialQuantities = new Map(
-        equipmentData.items.map(item => [item.id, item.quantity])
-      );
-      setQuantities(initialQuantities);
-    }
-  }, [equipmentData]);
+            const initialQuantities = new Map(
+                equipmentData.items.map(item => [item.id, item.quantity])
+            );
+            setQuantities(initialQuantities);
+        }
+    }, [equipmentData]);
 
-  const handleSchoolSelect = async (item: SelectItem) => {
-    console.log('Selected School:', item.name);
-    setGrades([]);
-    setClasses([]);
-    setEquipmentData(null);
+    const handleSchoolSelect = async (item: SelectItem) => {
+        console.log('Selected School:', item.name);
+        setGrades([]);
+        setClasses([]);
+        setEquipmentData(null);
 
-    setIsLoading(true);
-    try {
+        setIsLoading(true);
+        try {
             const response = await fetch(`/api/grades?schoolId=${item.id}`);
-      if (!response.ok) throw new Error('Failed to fetch grades');
-      const data = await response.json();
-      setGrades(data);
-    } catch (error) {
-      console.error('Error fetching grades:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+            if (!response.ok) throw new Error('Failed to fetch grades');
+            const data = await response.json();
+            setGrades(data);
+        } catch (error) {
+            console.error('Error fetching grades:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-  const handleGradeSelect = async (item: SelectItem) => {
-    console.log('Selected Grade:', item.name);
-    setClasses([]);
-    setEquipmentData(null);
+    const handleGradeSelect = async (item: SelectItem) => {
+        console.log('Selected Grade:', item.name);
+        setClasses([]);
+        setEquipmentData(null);
 
-    setIsLoading(true);
-    try {
-      const response = await fetch(`/api/classes?gradeId=${item.id}`);
-      const data = await response.json();
-      setClasses(data);
-    } catch (error) {
-      console.error('Error fetching classes:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        setIsLoading(true);
+        try {
+            const response = await fetch(`/api/classes?gradeId=${item.id}`);
+            const data = await response.json();
+            setClasses(data);
+        } catch (error) {
+            console.error('Error fetching classes:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-  const handleClassSelect = async (item: SelectItem) => {
-    console.log('Selected Class:', item.name);
+    const handleClassSelect = async (item: SelectItem) => {
+        console.log('Selected Class:', item.name);
 
-    setIsLoading(true);
-    try {
-      const response = await fetch(`/api/equipment?classId=${item.id}`);
-      const data = await response.json();
-      setEquipmentData(data);
-    } catch (error) {
-      console.error('Error fetching equipment:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        setIsLoading(true);
+        try {
+            const response = await fetch(`/api/equipment?classId=${item.id}`);
+            const data = await response.json();
+            setEquipmentData(data);
+        } catch (error) {
+            console.error('Error fetching equipment:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const handleToggleEquipment = (id: number) => {
-    setSelectedEquipment(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
-  };
+        setSelectedEquipment(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(id)) {
+                newSet.delete(id);
+            } else {
+                newSet.add(id);
+            }
+            return newSet;
+        });
+    };
 
-  const handleQuantityChange = (id: number, quantity: number) => {
-    setQuantities(prev => {
-      const newMap = new Map(prev);
-      newMap.set(id, quantity);
-      return newMap;
-    });
-  };
+    const handleQuantityChange = (id: number, quantity: number) => {
+        setQuantities(prev => {
+            const newMap = new Map(prev);
+            newMap.set(id, quantity);
+            return newMap;
+        });
+    };
 
-  // Don't render content if not authenticated
-  if (!isAuthenticated) {
-    return null;
-  }
+    // Don't render content if not authenticated
+    if (!isAuthenticated) {
+        return null;
+    }
 
-  return (
-    <Layout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-zinc-900 dark:text-white mb-4">
-            Motzkin Store - School Equipment
-          </h1>
-          <p className="text-xl text-zinc-600 dark:text-zinc-400">
-            Select your school, grade, and class to view your equipment list
-          </p>
-        </div>
+    return (
+        <Layout>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div className="text-center mb-12">
+                    <h1 className="text-4xl font-bold text-zinc-900 dark:text-white mb-4">
+                        Motzkin Store - School Equipment
+                    </h1>
+                    <p className="text-xl text-zinc-600 dark:text-zinc-400">
+                        Select your school, grade, and class to view your equipment list
+                    </p>
+                </div>
 
-        <div className="max-w-3xl mx-auto">
-          <SearchableSelect
-            label="School"
-            items={schools}
-            onSelect={handleSchoolSelect}
-          />
+                <div className="max-w-3xl mx-auto">
+                    <SearchableSelect
+                        label="School"
+                        items={schools}
+                        onSelect={handleSchoolSelect}
+                    />
 
-          {grades.length > 0 && (
-            <SearchableSelect
-              label="Grade"
-              items={grades}
-              onSelect={handleGradeSelect}
-            />
-          )}
+                    {grades.length > 0 && (
+                        <SearchableSelect
+                            label="Grade"
+                            items={grades}
+                            onSelect={handleGradeSelect}
+                        />
+                    )}
 
-          {classes.length > 0 && (
-            <SearchableSelect
-              label="Class"
-              items={classes}
-              onSelect={handleClassSelect}
-            />
-          )}
+                    {classes.length > 0 && (
+                        <SearchableSelect
+                            label="Class"
+                            items={classes}
+                            onSelect={handleClassSelect}
+                        />
+                    )}
 
-          {isLoading && (
-            <div className="text-center py-4">
-              <p className="text-zinc-600 dark:text-zinc-400">Loading...</p>
+                    {isLoading && (
+                        <div className="text-center py-4">
+                            <p className="text-zinc-600 dark:text-zinc-400">Loading...</p>
+                        </div>
+                    )}
+
+                    {equipmentData && (
+                        <EquipmentList
+                            data={equipmentData}
+                            selectedIds={selectedEquipment}
+                            quantities={quantities}
+                            onToggle={handleToggleEquipment}
+                            onQuantityChange={handleQuantityChange}
+                        />
+                    )}
+                </div>
             </div>
-          )}
-
-          {equipmentData && (
-            <EquipmentList
-              data={equipmentData}
-              selectedIds={selectedEquipment}
-              quantities={quantities}
-              onToggle={handleToggleEquipment}
-              onQuantityChange={handleQuantityChange}
-            />
-          )}
-        </div>
-      </div>
-    </Layout>
-  );
+        </Layout>
+    );
 }
