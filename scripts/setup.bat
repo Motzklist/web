@@ -1,5 +1,5 @@
 @echo off
-setlocal enabledelayedexpansion
+setlocal enabledelayedexpansion enableextensions
 
 REM ============================================
 REM   CONFIGURATION
@@ -15,13 +15,25 @@ set CACHE_FILE=%~dp0.setup-cache
 set SCRIPT_DIR=%~dp0
 
 REM ============================================
-REM   COLOR CODES
+REM   ENABLE VIRTUAL TERMINAL PROCESSING
 REM ============================================
-set "RED=[91m"
-set "GREEN=[92m"
-set "YELLOW=[93m"
-set "BLUE=[94m"
-set "RESET=[0m"
+REM Try to enable ANSI color support (Windows 10+)
+for /f "tokens=2 delims==" %%a in ('wmic os get Caption /value 2^>nul') do set OS_CAPTION=%%a
+echo %OS_CAPTION% | findstr /i "Windows 10 Windows 11" >nul 2>&1
+if not errorlevel 1 (
+    REM Windows 10/11 detected - enable virtual terminal
+    reg add HKCU\Console /v VirtualTerminalLevel /t REG_DWORD /d 1 /f >nul 2>&1
+)
+
+REM Create ESC character for ANSI codes
+for /F %%a in ('echo prompt $E ^| cmd') do set "ESC=%%a"
+
+REM Define color codes
+set "RED=%ESC%[91m"
+set "GREEN=%ESC%[92m"
+set "YELLOW=%ESC%[93m"
+set "BLUE=%ESC%[94m"
+set "RESET=%ESC%[0m"
 
 REM ============================================
 REM   HELP
@@ -35,6 +47,24 @@ REM ============================================
 set PORT=%DEFAULT_PORT%
 if not "%1"=="" (
     set PORT=%1
+)
+
+REM Validate PORT is numeric only (prevent command injection)
+echo %PORT%| findstr /r "^[0-9][0-9]*$" >nul 2>&1
+if errorlevel 1 (
+    echo %RED%Error: Invalid port number "%PORT%".%RESET%
+    echo Port must be a numeric value.
+    exit /b 1
+)
+
+REM Validate PORT is in valid range (1-65535)
+if %PORT% LSS 1 (
+    echo %RED%Error: Port number must be at least 1.%RESET%
+    exit /b 1
+)
+if %PORT% GTR 65535 (
+    echo %RED%Error: Port number must be at most 65535.%RESET%
+    exit /b 1
 )
 
 REM ============================================
@@ -189,7 +219,7 @@ if not exist "node_modules\" (
 
 REM Check if port is available
 echo %YELLOW%[5/6]%RESET% Checking port %PORT%...
-powershell -Command "Get-NetTCPConnection -LocalPort %PORT% -ErrorAction SilentlyContinue" >nul 2>&1
+powershell -Command "Get-NetTCPConnection -LocalPort ([int]%PORT%) -ErrorAction SilentlyContinue" >nul 2>&1
 if not errorlevel 1 (
     echo %YELLOW%Warning: Port %PORT% is already in use.%RESET%
     if %STRICT_MODE%==1 (
