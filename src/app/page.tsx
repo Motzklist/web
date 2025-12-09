@@ -1,22 +1,39 @@
 'use client';
 
-import {useState, useEffect} from 'react';
+import {useState, useEffect, useCallback} from 'react';
 import {useRouter} from 'next/navigation';
 import Layout from '@/components/Layout';
 import SearchableSelect, {SelectItem} from '@/components/SearchableSelect';
 import EquipmentList, {EquipmentData} from '@/components/EquipmentList';
 import {useAuth} from '@/contexts/AuthContext';
+        
+// Define the API URL using the environment variable injected by Docker Compose.
+// CRITICAL: Next.js must be told which URL to use for the API Gateway service.
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+
+// Define the state structure to track all selected IDs
+interface SelectionState {
+    school: SelectItem | null;
+    grade: SelectItem | null;
+    class: SelectItem | null;
+}
 
 export default function Home() {
     const router = useRouter();
     const {isAuthenticated} = useAuth();
-    const [schools] = useState<SelectItem[]>([
-        {id: 1, name: 'Begin'},
-        {id: 2, name: 'Ben-Gurion'}
-    ]);
+    
+    // State to track the currently selected items
+    const [selection, setSelection] = useState<SelectionState>({
+        school: null,
+        grade: null,
+        class: null,
+    });
+    
+    const [schools, setSchools] = useState<SelectItem[]>([]);
     const [grades, setGrades] = useState<SelectItem[]>([]);
     const [classes, setClasses] = useState<SelectItem[]>([]);
     const [equipmentData, setEquipmentData] = useState<EquipmentData | null>(null);
+    
     const [selectedEquipment, setSelectedEquipment] = useState<Set<number>>(new Set());
     const [quantities, setQuantities] = useState<Map<number, number>>(new Map());
     const [isLoading, setIsLoading] = useState(false);
@@ -39,69 +56,89 @@ export default function Home() {
         };
     }, [isAuthenticated, redirecting, router]);
 
+    // --- Utility Fetch Function ---
+    // Memoize the function for use in useEffect dependencies
+    const fetchData = useCallback(async (endpoint: string, setter: (data: SelectItem[] | any) => void, resetSelections: boolean = true) => {
+        if (resetSelections) {
+            setter([]);
+            setEquipmentData(null);
+        }
+
+        setIsLoading(true);
+        try {
+            // Use the absolute API URL here
+            const url = `${API_BASE_URL}${endpoint}`;
+            console.log('Fetching from:', url);
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`Failed to fetch data from ${endpoint}. Status: ${response.status}`);
+            const data = await response.json();
+            setter(data);
+        } catch (error) {
+            console.error(`Error fetching data for ${endpoint}:`, error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []); // Only fetchData is a dependency
+
+    // 1. Fetch Schools (Runs once on component mount)
+    useEffect(() => {
+        // We pass 'false' for resetSelections since we are setting the initial data for schools
+        fetchData('/api/schools', setSchools, false);
+    }, [fetchData]);
+    
     // Initialize all items as selected when equipment data loads
     useEffect(() => {
         if (equipmentData) {
-            const allIds = new Set(equipmentData.items.map(item => item.id));
+            const allIds = new Set(equipmentData.items.map(item => parseInt(item.id as any))); // TODO: Settle if using numberor string
             setSelectedEquipment(allIds);
 
             const initialQuantities = new Map(
-                equipmentData.items.map(item => [item.id, item.quantity])
-            );
+                equipmentData.items.map(item => [parseInt(item.id as any), item.quantity])
+            ); // TODO: Settle if using numberor string
             setQuantities(initialQuantities);
         }
     }, [equipmentData]);
-
-    const handleSchoolSelect = async (item: SelectItem) => {
+    
+    
+    // --- Event Handlers (Trigger Fetching) ---
+    
+    const handleSchoolSelect = useCallback((item: SelectItem) => {
         console.log('Selected School:', item.name);
+        // 1. Reset lower selections
+        setSelection({ school: item, grade: null, class: null });
         setGrades([]);
         setClasses([]);
         setEquipmentData(null);
 
-        setIsLoading(true);
-        try {
-            const response = await fetch(`/api/grades?schoolId=${item.id}`);
-            if (!response.ok) throw new Error('Failed to fetch grades');
-            const data = await response.json();
-            setGrades(data);
-        } catch (error) {
-            console.error('Error fetching grades:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+        // 2. Fetch Grades immediately (CRITICAL FIX: Use 'school_id' and correct ID access)
+        fetchData(`/api/grades?school_id=${item.id}`, setGrades);
 
-    const handleGradeSelect = async (item: SelectItem) => {
+    }, [fetchData]);
+
+    const handleGradeSelect = useCallback((item: SelectItem) => {
         console.log('Selected Grade:', item.name);
+        // 1. Retain school selection, reset class
+        setSelection(prev => ({ ...prev, grade: item, class: null }));
         setClasses([]);
         setEquipmentData(null);
 
-        setIsLoading(true);
-        try {
-            const response = await fetch(`/api/classes?gradeId=${item.id}`);
-            const data = await response.json();
-            setClasses(data);
-        } catch (error) {
-            console.error('Error fetching classes:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+        // 2. Fetch Classes immediately (CRITICAL FIX: Pass BOTH school_id and grade_id)
+        const endpoint = `/api/classes?school_id=${selection.school?.id}&grade_id=${item.id}`;
+        fetchData(endpoint, setClasses);
 
-    const handleClassSelect = async (item: SelectItem) => {
+    }, [fetchData, selection.school]);
+
+    const handleClassSelect = useCallback((item: SelectItem) => {
         console.log('Selected Class:', item.name);
+        // 1. Retain school and grade, set class
+        setSelection(prev => ({ ...prev, class: item }));
+        setEquipmentData(null);
 
-        setIsLoading(true);
-        try {
-            const response = await fetch(`/api/equipment?classId=${item.id}`);
-            const data = await response.json();
-            setEquipmentData(data);
-        } catch (error) {
-            console.error('Error fetching equipment:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+        // 2. Fetch Equipment immediately (CRITICAL FIX: Pass ALL THREE IDs)
+        const endpoint = `/api/equipment?school_id=${selection.school?.id}&grade_id=${selection.grade?.id}&class_id=${item.id}`;
+        fetchData(endpoint, setEquipmentData);
+
+    }, [fetchData, selection.school, selection.grade]);
 
     const handleToggleEquipment = (id: number) => {
         setSelectedEquipment(prev => {
@@ -141,25 +178,34 @@ export default function Home() {
                 </div>
 
                 <div className="max-w-3xl mx-auto">
+                    {/* School Selector - Now fetches data */}
                     <SearchableSelect
                         label="School"
                         items={schools}
+                        placeholder={isLoading && schools.length === 0 ? "Loading Schools..." : "Search School"}
                         onSelect={handleSchoolSelect}
+                        disabled={isLoading && schools.length === 0}
                     />
 
                     {grades.length > 0 && (
+                        {/* Grade Selector - Enabled after School is selected */}
                         <SearchableSelect
                             label="Grade"
                             items={grades}
+                            placeholder={selection.school ? "Search Grade" : "Select School First"}
                             onSelect={handleGradeSelect}
+                            disabled={!selection.school || isLoading}
                         />
                     )}
 
                     {classes.length > 0 && (
+                        {/* Class Selector - Enabled after Grade is selected */}
                         <SearchableSelect
                             label="Class"
                             items={classes}
+                            placeholder={selection.grade ? "Search Class" : "Select Grade First"}
                             onSelect={handleClassSelect}
+                            disabled={!selection.grade || isLoading}
                         />
                     )}
 
