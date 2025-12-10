@@ -1,6 +1,18 @@
+'use client';
+
 import Link from 'next/link';
+import {useRouter} from 'next/navigation';
+import {useAuth} from '@/contexts/AuthContext';
 
 export default function Header() {
+    const router = useRouter();
+    const {isAuthenticated, logout} = useAuth();
+
+    const handleLogout = () => {
+        logout();
+        router.replace('/login');
+    };
+
     return (
         <header className="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
             <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -29,6 +41,14 @@ export default function Header() {
                         >
                             Contact
                         </Link>
+                        {isAuthenticated && (
+                            <button
+                                onClick={handleLogout}
+                                className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors font-medium"
+                            >
+                                Logout
+                            </button>
+                        )}
                     </div>
                 </div>
             </nav>

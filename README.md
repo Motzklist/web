@@ -4,12 +4,15 @@ A modern Next.js website with a basic layout structure including header, main co
 
 ## Features
 
-- ✅ Next.js 16 with App Router
-- ✅ TypeScript support
-- ✅ Tailwind CSS for styling
-- ✅ Responsive design
-- ✅ Dark mode support
-- ✅ Reusable layout components (Header, Footer, Layout)
+- [X] Next.js 16 with App Router
+- [X] TypeScript support
+- [X] Tailwind CSS for styling
+- [X] Responsive design
+- [X] Dark mode support
+- [X] Reusable layout components (Header, Footer, Layout)
+- [X] Authentication system with session management
+- [X] Protected routes with automatic redirect
+- [X] Logout functionality with session invalidation
 
 ## Getting Started
 
@@ -50,19 +53,17 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Authentication
+
+Session-based auth using sessionStorage. Login at `/login` with any non-empty credentials. Logout button appears in the header when authenticated.
+
 ## Project Structure
 
 ```
 src/
-├── app/
-│   ├── layout.tsx          # Root layout with metadata
-│   ├── page.tsx            # Homepage
-│   ├── globals.css         # Global styles
-│   └── favicon.ico         # Site favicon
-└── components/
-    ├── Layout.tsx          # Main layout wrapper with header and footer
-    ├── Header.tsx          # Navigation header component
-    └── Footer.tsx          # Footer component
+├── app/              # Next.js app router pages
+├── components/       # Reusable React components
+└── contexts/         # React contexts (auth, etc.)
 ```
 
 ## Available Scripts
