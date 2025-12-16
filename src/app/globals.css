@@ -27,3 +27,18 @@ body {
     color: var(--foreground);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
+
+/* Line timer animation - shrinks from full width to zero */
+@keyframes timer-line {
+    from {
+        width: 100%;
+    }
+    to {
+        width: 0%;
+    }
+}
+
+.animate-timer-line {
+    animation: timer-line linear forwards;
+}
+
