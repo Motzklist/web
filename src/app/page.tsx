@@ -123,7 +123,7 @@ export default function Home() {
         const endpoint = `/api/classes?school_id=${selection.school?.id}&grade_id=${item.id}`;
         fetchData(endpoint, setClasses);
 
-    }, [fetchData, selection.school]);
+    }, [fetchData, selection.school?.id]);
 
     const handleClassSelect = useCallback(async (item: SelectItem) => {
         console.log('Selected Class:', item.name);
@@ -160,7 +160,7 @@ export default function Home() {
             setIsLoading(false);
         }
 
-    }, [selection.school, selection.grade]);
+    }, [selection.school?.id, selection.grade?.id, selection.school?.name, selection.grade?.name]);
 
     const handleToggleEquipment = (id: number) => {
         setSelectedEquipment(prev => {
