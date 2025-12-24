@@ -2,11 +2,13 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import {useRouter} from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 
 export default function Header() {
-    const { isAuthenticated } = useAuth();
+    const router = useRouter();
+    const { isAuthenticated, logout } = useAuth();
 
     // Only access cart context when authenticated (CartProvider is available)
     let cartEntries: { id: string }[] = [];
@@ -18,6 +20,11 @@ export default function Header() {
     }
 
     const hasItems = cartEntries.length > 0;
+    
+    const handleLogout = () => {
+        logout();
+        router.replace('/login');
+    };
 
     return (
         <header className="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
@@ -48,19 +55,27 @@ export default function Header() {
                             Contact
                         </Link>
                         {isAuthenticated && (
-                            <Link
-                                href="/cart"
-                                className="relative text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors"
-                                title="View Cart"
-                            >
-                                <Image
-                                    src={hasItems ? "/cart-full.svg" : "/cart-empty.svg"}
-                                    alt="Cart"
-                                    width={24}
-                                    height={24}
-                                    className="dark:invert"
-                                />
-                            </Link>
+                            <>
+                                <Link
+                                    href="/cart"
+                                    className="relative text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors"
+                                    title="View Cart"
+                                >
+                                    <Image
+                                        src={hasItems ? "/cart-full.svg" : "/cart-empty.svg"}
+                                        alt="Cart"
+                                        width={24}
+                                        height={24}
+                                        className="dark:invert"
+                                    />
+                                </Link>
+                                <button
+                                    onClick={handleLogout}
+                                    className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors font-medium"
+                                >
+                                    Logout
+                                </button>
+                            </>
                         )}
                     </div>
                 </div>
