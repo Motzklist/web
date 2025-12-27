@@ -5,7 +5,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import Layout from '@/components/Layout';
 import ConfirmDialog from '@/components/ConfirmDialog';
-import { useAuth } from '@/contexts/AuthContext';
 import { useCart, CartEntry } from '@/contexts/CartContext';
 
 export default function CartPage() {
