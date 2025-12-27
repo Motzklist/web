@@ -28,6 +28,8 @@ interface EquipmentItemResponse {
 export default function Home() {
     const {isAuthenticated} = useAuth();
 
+    // Removed redundant authentication check; ProtectedRoute in layout handles this
+
     // State to track the currently selected items
     const [selection, setSelection] = useState<SelectionState>({
         school: null,

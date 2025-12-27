@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Layout from '@/components/Layout';
@@ -10,8 +9,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCart, CartEntry } from '@/contexts/CartContext';
 
 export default function CartPage() {
-    const router = useRouter();
-    const { isAuthenticated } = useAuth();
     const { cartEntries, removeFromCart, clearCart } = useCart();
 
     // Dialog state
@@ -24,15 +21,6 @@ export default function CartPage() {
         isOpen: false,
         type: 'remove',
     });
-
-    // Check authentication and redirect if not authenticated
-    useEffect(() => {
-        // No need for manual redirect, handled by ProtectedRoute
-    }, []);
-
-    if (!isAuthenticated) {
-        return null;
-    }
 
     const handleRemoveClick = (entry: CartEntry) => {
         setDialogState({
