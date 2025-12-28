@@ -15,7 +15,6 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 interface SelectionState {
     school: SelectItem | null;
     grade: SelectItem | null;
-    class: SelectItem | null;
 }
 
 // Define the equipment item structure from Go backend
@@ -34,12 +33,10 @@ export default function Home() {
     const [selection, setSelection] = useState<SelectionState>({
         school: null,
         grade: null,
-        class: null,
     });
     
     const [schools, setSchools] = useState<SelectItem[]>([]);
     const [grades, setGrades] = useState<SelectItem[]>([]);
-    const [classes, setClasses] = useState<SelectItem[]>([]);
     const [equipmentData, setEquipmentData] = useState<EquipmentData | null>(null);
     
     const [selectedEquipment, setSelectedEquipment] = useState<Set<number>>(new Set());
@@ -105,9 +102,8 @@ export default function Home() {
     const handleSchoolSelect = useCallback((item: SelectItem) => {
         console.log('Selected School:', item.name);
         // 1. Reset lower selections
-        setSelection({ school: item, grade: null, class: null });
+        setSelection({ school: item, grade: null });
         setGrades([]);
-        setClasses([]);
         setEquipmentData(null);
 
         // 2. Fetch Grades immediately (CRITICAL FIX: Use 'school_id' and correct ID access)
@@ -118,51 +114,14 @@ export default function Home() {
     const handleGradeSelect = useCallback((item: SelectItem) => {
         console.log('Selected Grade:', item.name);
         // 1. Retain school selection, reset class
-        setSelection(prev => ({ ...prev, grade: item, class: null }));
-        setClasses([]);
+        setSelection(prev => ({ ...prev, grade: item }));
         setEquipmentData(null);
 
-        // 2. Fetch Classes immediately (CRITICAL FIX: Pass BOTH school_id and grade_id)
-        const endpoint = `/api/classes?school_id=${selection.school?.id}&grade_id=${item.id}`;
-        fetchData(endpoint, setClasses);
+        // Fetch equipment directly (no class)
+        const endpoint = `/api/equipment?school_id=${selection.school?.id}&grade_id=${item.id}`;
+        fetchData(endpoint, setEquipmentData);
 
     }, [fetchData, selection.school?.id]);
-
-    const handleClassSelect = useCallback(async (item: SelectItem) => {
-        console.log('Selected Class:', item.name);
-        // 1. Retain school and grade, set class
-        setSelection(prev => ({ ...prev, class: item }));
-        setEquipmentData(null);
-
-        // 2. Fetch Equipment immediately
-        const endpoint = `/api/equipment?school_id=${selection.school?.id}&grade_id=${selection.grade?.id}&class_id=${item.id}`;
-
-        setIsLoading(true);
-        try {
-            const url = `${API_BASE_URL}${endpoint}`;
-            console.log('Fetching from:', url);
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`Failed to fetch data from ${endpoint}. Status: ${response.status}`);
-            const data = await response.json();
-            const itemsArray = Array.isArray(data.items) ? data.items.map((equipItem: any) => ({
-                ...equipItem,
-                id: typeof equipItem.id === 'string' ? parseInt(equipItem.id, 10) : equipItem.id
-            })) : [];
-            // Transform the Go backend response (array) into the expected structure
-            const wrappedData: EquipmentData = {
-                classId: Number(`${selection.school?.id}${selection.grade?.id}${item.id}`),
-                className: `${selection.school?.name} - Grade ${selection.grade?.name} - ${item.name}`,
-                items: itemsArray
-            };
-
-            setEquipmentData(wrappedData);
-        } catch (error) {
-            console.error(`Error fetching equipment:`, error);
-        } finally {
-            setIsLoading(false);
-        }
-
-    }, [selection.school?.id, selection.grade?.id, selection.school?.name, selection.grade?.name]);
 
     const handleToggleEquipment = (id: number) => {
         setSelectedEquipment(prev => {
@@ -218,17 +177,6 @@ export default function Home() {
                         />
                     )}
 
-                    {/* Class Selector - Enabled after Grade is selected */}
-                    {classes.length > 0 && (
-                        <SearchableSelect
-                            label="Class"
-                            items={classes}
-                            placeholder={selection.grade ? "Search Class" : "Select Grade First"}
-                            onSelect={handleClassSelect}
-                            disabled={!selection.grade || isLoading}
-                        />
-                    )}
-
                     {isLoading && (
                         <div className="text-center py-4">
                             <p className="text-zinc-600 dark:text-zinc-400">Loading...</p>
@@ -247,7 +195,6 @@ export default function Home() {
                             <SaveToCartButton
                                 school={selection.school ? { id: Number(selection.school.id), name: selection.school.name } : null}
                                 grade={selection.grade ? { id: Number(selection.grade.id), name: selection.grade.name } : null}
-                                classInfo={selection.class ? { id: Number(selection.class.id), name: selection.class.name } : null}
                                 selectedIds={selectedEquipment}
                                 quantities={quantities}
                                 items={equipmentData.items}

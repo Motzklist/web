@@ -26,7 +26,7 @@ export default function CartPage() {
             isOpen: true,
             type: 'remove',
             entryId: entry.id,
-            entryName: `${entry.school.name} - ${entry.grade.name} - ${entry.class.name}`,
+            entryName: `${entry.school.name} - ${entry.grade.name}`,
         });
     };
 
@@ -135,7 +135,7 @@ export default function CartPage() {
                                                 {entry.school.name}
                                             </h3>
                                             <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                                                {entry.grade.name} • {entry.class.name}
+                                                {entry.grade.name}
                                             </p>
                                             <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-1">
                                                 Added {formatDate(entry.timestamp)}

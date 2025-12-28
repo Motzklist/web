@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { useCart, CartItem } from '@/contexts/CartContext';
+import { useCart } from '@/contexts/CartContext';
 import Toast from './Toast';
+import { CartEntryPayload } from '@/types/cart';
 
 interface SaveToCartButtonProps {
     school: { id: number; name: string } | null;
     grade: { id: number; name: string } | null;
-    classInfo: { id: number; name: string } | null;
     selectedIds: Set<number>;
     quantities: Map<number, number>;
     items: { id: number; name: string; quantity: number }[];
@@ -19,7 +19,6 @@ const DISABLED_DURATION = 3000; // 3 seconds
 export default function SaveToCartButton({
     school,
     grade,
-    classInfo,
     selectedIds,
     quantities,
     items,
@@ -30,13 +29,13 @@ export default function SaveToCartButton({
     const [showToast, setShowToast] = useState(false);
 
     const handleSaveToCart = useCallback(() => {
-        if (!school || !grade || !classInfo) return;
+        if (!school || !grade) return;
 
         // Filter only selected items and map with current quantities
-        const cartItems: CartItem[] = items
+        const cartItems: CartEntryPayload['items'] = items
             .filter(item => selectedIds.has(item.id))
             .map(item => ({
-                id: item.id,
+                id: Number(item.id), // Ensure id is number
                 name: item.name,
                 quantity: quantities.get(item.id) ?? item.quantity,
             }))
@@ -47,7 +46,6 @@ export default function SaveToCartButton({
         addToCart({
             school: { id: school.id, name: school.name },
             grade: { id: grade.id, name: grade.name },
-            class: { id: classInfo.id, name: classInfo.name },
             items: cartItems,
         });
 
@@ -58,13 +56,13 @@ export default function SaveToCartButton({
         setTimeout(() => {
             setIsTemporarilyDisabled(false);
         }, DISABLED_DURATION);
-    }, [school, grade, classInfo, selectedIds, quantities, items, addToCart]);
+    }, [school, grade, selectedIds, quantities, items, addToCart]);
 
     const handleCloseToast = useCallback(() => {
         setShowToast(false);
     }, []);
 
-    const isButtonDisabled = disabled || isTemporarilyDisabled || !school || !grade || !classInfo || selectedIds.size === 0;
+    const isButtonDisabled = disabled || isTemporarilyDisabled || !school || !grade || selectedIds.size === 0;
 
     // Count selected items with quantity > 0
     const validItemCount = items
@@ -111,4 +109,3 @@ export default function SaveToCartButton({
         </>
     );
 }
-

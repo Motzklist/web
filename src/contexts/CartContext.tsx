@@ -2,28 +2,18 @@
 
 import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
 import * as api from '@/services/api';
-import { CartEntryPayload } from '@/types/cart';
+import { CartEntryPayload, CartItem } from '@/types/cart';
 import { useAuth } from './AuthContext';
-
-export interface CartItem {
-    id: string;
-    name: string;
-    quantity: number;
-}
 
 export interface CartEntry {
     id: string;
     timestamp: number;
     school: {
-        id: string;
+        id: number;
         name: string;
     };
     grade: {
-        id: string;
-        name: string;
-    };
-    class: {
-        id: string;
+        id: number;
         name: string;
     };
     items: CartItem[];
@@ -58,8 +48,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setError(null);
         try {
             const data = await api.getCart(userid);
-            setCartEntries(data);
-            console.log('[CartContext] fetchCart: setCartEntries', data);
+            // Normalize all ids to number for CartEntry and CartItem
+            const normalized = Array.isArray(data)
+                ? data.map((entry: any) => ({
+                    ...entry,
+                    school: {
+                        ...entry.school,
+                        id: Number(entry.school.id),
+                    },
+                    grade: {
+                        ...entry.grade,
+                        id: Number(entry.grade.id),
+                    },
+                    items: Array.isArray(entry.items)
+                        ? entry.items.map((item: any) => ({
+                            ...item,
+                            id: Number(item.id),
+                        }))
+                        : [],
+                }))
+                : [];
+            setCartEntries(normalized);
+            console.log('[CartContext] fetchCart: setCartEntries', normalized);
         } catch (err: any) {
             setError(err.message || 'Failed to fetch cart');
             setCartEntries([]);
@@ -85,19 +95,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
                     timestamp: Date.now(),
                     school: {
                         ...entry.school,
-                        id: String(entry.school.id),
+                        id: Number(entry.school.id),
                     },
                     grade: {
                         ...entry.grade,
-                        id: String(entry.grade.id),
-                    },
-                    class: {
-                        ...entry.class,
-                        id: String(entry.class.id),
+                        id: Number(entry.grade.id),
                     },
                     items: entry.items.map(item => ({
                         ...item,
-                        id: String(item.id),
+                        id: Number(item.id),
                     })),
                 };
                 return [...prev, newEntry];
@@ -110,19 +116,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 timestamp: Date.now(),
                 school: {
                     ...entry.school,
-                    id: String(entry.school.id),
+                    id: Number(entry.school.id),
                 },
                 grade: {
                     ...entry.grade,
-                    id: String(entry.grade.id),
-                },
-                class: {
-                    ...entry.class,
-                    id: String(entry.class.id),
+                    id: Number(entry.grade.id),
                 },
                 items: entry.items.map(item => ({
                     ...item,
-                    id: String(item.id),
+                    id: Number(item.id),
                 })),
             };
             const updated = [...current, newEntry];

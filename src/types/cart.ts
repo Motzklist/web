@@ -13,10 +13,6 @@ export interface CartEntryPayload {
         id: number;
         name: string;
     };
-    class: {
-        id: number;
-        name: string;
-    };
     items: CartItem[];
 }
 
