@@ -74,10 +74,26 @@ export async function getCart(userid: string) {
 }
 
 export async function updateCart(userid: string, items: CartEntryPayload[]) {
+    // Ensure all item ids in items[].items are strings before sending
+    const itemsWithStringIds = items.map(entry => ({
+        ...entry,
+        school: {
+            ...entry.school,
+            id: String(entry.school.id)
+        },
+        grade: {
+            ...entry.grade,
+            id: String(entry.grade.id)
+        },
+        items: entry.items.map(item => ({
+            ...item,
+            id: String(item.id)
+        }))
+    }));
     const res = await fetch(`${API_BASE}/api/cart?userid=${encodeURIComponent(userid)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(items),
+        body: JSON.stringify(itemsWithStringIds),
         credentials: 'include',
     });
     if (!res.ok) return parseError(res, 'Failed to update cart');
