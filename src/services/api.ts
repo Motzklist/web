@@ -17,7 +17,8 @@ import { CartEntryPayload } from '@/types/cart';
  */
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
-if (!API_BASE) {
+// Only warn in browser environment to avoid false positives during SSR/build
+if (typeof window !== 'undefined' && !API_BASE) {
     console.error('[CRITICAL] NEXT_PUBLIC_API_URL is not set. All API requests will fail. Set this in your .env.local or environment variables.');
 }
 
