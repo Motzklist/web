@@ -1,57 +1,117 @@
-# ----------------------------------------------------------------------
-# Stage 1: Dependency Installation (Base Builder)
-# ----------------------------------------------------------------------
-FROM node:20-alpine AS deps
+# ==============================================================================
+# Motzkin Store Web - Multi-Stage Dockerfile
+# ==============================================================================
+# This Dockerfile supports both DEVELOPMENT and PRODUCTION builds.
+#
+# USAGE:
+#   Development (with hot reload):
+#     docker build --target development -t motzkin-web:dev .
+#     docker run -p 3000:3000 -v $(pwd)/src:/app/src motzkin-web:dev
+#
+#   Production:
+#     docker build --target production -t motzkin-web:prod .
+#     docker run -p 3000:3000 motzkin-web:prod
+#
+#   Or use docker-compose (recommended):
+#     docker-compose up --build
+# ==============================================================================
 
-# Set the working directory inside the container
+# ------------------------------------------------------------------------------
+# Stage 1: Base - Common setup for all stages
+# ------------------------------------------------------------------------------
+FROM node:20-alpine AS base
+
+# Install libc6-compat for Alpine compatibility with some npm packages
+RUN apk add --no-cache libc6-compat
+
 WORKDIR /app
 
-# Copy package files (package.json and lockfile)
-COPY package.json package-lock.json ./
+# ------------------------------------------------------------------------------
+# Stage 2: Dependencies - Install node_modules (cached layer)
+# ------------------------------------------------------------------------------
+FROM base AS deps
 
-# Install dependencies
-RUN npm install
+# Copy package files for dependency installation
+COPY package.json package-lock.json* ./
 
-# ----------------------------------------------------------------------
-# Stage 2: Next.js Build (FIX IS HERE)
-# ----------------------------------------------------------------------
-FROM node:20-alpine AS builder
+# Install all dependencies (including devDependencies for build)
+# Using --frozen-lockfile equivalent ensures reproducible builds
+RUN npm ci
+
+# ------------------------------------------------------------------------------
+# Stage 3: Development - Hot reload enabled
+# ------------------------------------------------------------------------------
+FROM base AS development
 
 WORKDIR /app
 
-# FIX: Copy package files (package.json and lockfile) into the builder stage
-# The 'npm run build' command needs these files to know what to build.
-COPY package.json package-lock.json ./
-
-# Copy node_modules from the 'deps' stage
+# Copy node_modules from deps stage (leverages Docker cache)
 COPY --from=deps /app/node_modules ./node_modules
 
-# Copy the rest of the application source code
+# Copy all source files
 COPY . .
 
-# Deployment
+# Set development environment
+ENV NODE_ENV=development
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+EXPOSE 3000
+
+# Start Next.js in development mode with hot reload
+CMD ["npm", "run", "dev"]
+
+# ------------------------------------------------------------------------------
+# Stage 4: Builder - Build the production application
+# ------------------------------------------------------------------------------
+FROM base AS builder
+
+WORKDIR /app
+
+# Copy node_modules and source files
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Set production environment for build optimization
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Deployment URL
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
-# Run the Next.js build command
+# Build the Next.js application
 RUN npm run build
 
-# ----------------------------------------------------------------------
-# Stage 3: Production Server (Minimal Image)
-# ----------------------------------------------------------------------
-# ... (Rest of Stage 3 remains the same)
-FROM node:20-alpine AS runner
-ENV NODE_ENV production
-ENV PORT 3000
-EXPOSE 3000
+# ------------------------------------------------------------------------------
+# Stage 5: Production - Minimal runtime image
+# ------------------------------------------------------------------------------
+FROM base AS production
+
 WORKDIR /app
-COPY --from=builder /app/.next ./.next
+
+# Create non-root user for security
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
+
+# Set production environment
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Copy only necessary files from builder
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 
-# CRITICAL FIX (Check for 'src' folder):
-# If your next.config.ts or other root-level files are required at runtime,
-# you may also need to copy those, but package.json is the primary fix for the error.
+# Set correct ownership
+RUN chown -R nextjs:nodejs /app
 
-RUN npm install --omit=dev
-CMD ["npm", "start"]
+# Switch to non-root user
+USER nextjs
+
+EXPOSE 3000
+
+# Start the production server
+CMD ["node", "server.js"]

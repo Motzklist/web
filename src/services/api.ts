@@ -1,19 +1,54 @@
-// src/services/api.ts
-// Centralized API service for authentication and cart operations.
-// All functions use fetch and the API base URL from environment variables.
-// Update endpoint paths and request/response formats as needed when backend is ready.
+/**
+ * @fileoverview Centralized API Service
+ *
+ * This module provides all API communication functions for the Motzkin Store
+ * web application. It handles authentication, cart operations, and error parsing.
+ *
+ * All requests include credentials for session-based authentication.
+ *
+ * @module services/api
+ */
 
 import { CartEntryPayload } from '@/types/cart';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL;
-if (!API_BASE) {
-    console.error('[CRITICAL] NEXT_PUBLIC_API_URL is not set. All API requests will fail. Set this in your .env.local or environment variables.');
+/**
+ * Gets the API base URL.
+ * Uses a getter to avoid issues during SSR/module evaluation.
+ */
+function getApiBase(): string {
+    const base = process.env.NEXT_PUBLIC_API_URL;
+    if (!base && typeof window !== 'undefined') {
+        console.error('[CRITICAL] NEXT_PUBLIC_API_URL is not set. All API requests will fail. Set this in your .env.local or environment variables.');
+    }
+    return base || '';
 }
 
-// --- Auth ---
+// =============================================================================
+// Authentication API
+// =============================================================================
+
+/**
+ * Authenticates a user with the backend.
+ *
+ * @param credentials - User login credentials
+ * @param credentials.username - The username
+ * @param credentials.password - The password
+ * @returns Promise resolving to the authentication response data
+ * @throws {Error} If login fails or credentials are invalid
+ *
+ * @example
+ * ```ts
+ * try {
+ *   const user = await login({ username: 'admin', password: 'secret' });
+ *   console.log('Logged in as:', user.username);
+ * } catch (error) {
+ *   console.error('Login failed:', error.message);
+ * }
+ * ```
+ */
 export async function login(credentials: { username: string; password: string }) {
     console.log('Attempting login with', credentials);
-    const res = await fetch(`${API_BASE}/api/login`, {
+    const res = await fetch(`${getApiBase()}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(credentials),
@@ -36,9 +71,15 @@ export async function login(credentials: { username: string; password: string })
     return data;
 }
 
+/**
+ * Logs out the current user by invalidating their session.
+ *
+ * @returns Promise resolving to an empty object or logout confirmation
+ * @throws {Error} If logout request fails
+ */
 export async function logout() {
     // Call backend /api/logout to clear session
-    const res = await fetch(`${API_BASE}/api/logout`, {
+    const res = await fetch(`${getApiBase()}/api/logout`, {
         method: 'POST',
         credentials: 'include',
     });
@@ -46,9 +87,15 @@ export async function logout() {
     return res.json().catch(() => ({})); // In case backend returns no body
 }
 
+/**
+ * Checks if the current user session is authenticated.
+ *
+ * @returns Promise resolving to the current user's authentication status
+ * @throws {Error} If user is not authenticated
+ */
 export async function checkAuth() {
     // Checks if the user is authenticated (e.g., GET /api/auth/status or /api/auth/me)
-    const res = await fetch(`${API_BASE}/api/auth/status`, {
+    const res = await fetch(`${getApiBase()}/api/auth/status`, {
         method: 'GET',
         credentials: 'include',
     });
@@ -63,9 +110,19 @@ export async function checkAuth() {
     return res.json();
 }
 
-// --- Cart ---
+// =============================================================================
+// Cart API
+// =============================================================================
+
+/**
+ * Retrieves the shopping cart for a specific user.
+ *
+ * @param userid - The unique identifier of the user
+ * @returns Promise resolving to the user's cart data
+ * @throws {Error} If cart fetch fails
+ */
 export async function getCart(userid: string) {
-    const res = await fetch(`${API_BASE}/api/cart?userid=${encodeURIComponent(userid)}`, {
+    const res = await fetch(`${getApiBase()}/api/cart?userid=${encodeURIComponent(userid)}`, {
         method: 'GET',
         credentials: 'include',
     });
@@ -73,6 +130,14 @@ export async function getCart(userid: string) {
     return res.json();
 }
 
+/**
+ * Updates the shopping cart for a specific user.
+ *
+ * @param userid - The unique identifier of the user
+ * @param items - Array of cart entries to save
+ * @returns Promise resolving to the updated cart data
+ * @throws {Error} If cart update fails
+ */
 export async function updateCart(userid: string, items: CartEntryPayload[]) {
     // Ensure all item ids in items[].items are strings before sending
     const itemsWithStringIds = items.map(entry => ({
@@ -90,7 +155,7 @@ export async function updateCart(userid: string, items: CartEntryPayload[]) {
             id: String(item.id)
         }))
     }));
-    const res = await fetch(`${API_BASE}/api/cart?userid=${encodeURIComponent(userid)}`, {
+    const res = await fetch(`${getApiBase()}/api/cart?userid=${encodeURIComponent(userid)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(itemsWithStringIds),
@@ -100,8 +165,21 @@ export async function updateCart(userid: string, items: CartEntryPayload[]) {
     return res.json();
 }
 
-// --- Improved error handling for all API calls ---
-function parseError(res: Response, fallback: string) {
+// =============================================================================
+// Utility Functions
+// =============================================================================
+
+/**
+ * Parses error responses from API calls.
+ * Attempts to extract error message from JSON response body.
+ *
+ * @param res - The fetch Response object
+ * @param fallback - Fallback error message if parsing fails
+ * @returns Never returns; always throws an Error
+ * @throws {Error} With the parsed or fallback error message
+ * @internal
+ */
+function parseError(res: Response, fallback: string): Promise<never> {
     return res.json().then(data => {
         throw new Error(data?.error || fallback);
     }).catch(() => {
@@ -109,4 +187,3 @@ function parseError(res: Response, fallback: string) {
     });
 }
 
-// Add more functions as needed for future backend endpoints.

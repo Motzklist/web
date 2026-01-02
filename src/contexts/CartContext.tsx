@@ -1,3 +1,24 @@
+/**
+ * @fileoverview Shopping Cart Context Provider
+ *
+ * Manages shopping cart state and synchronization with the backend API.
+ * Provides cart operations (add, remove, clear) with optimistic updates
+ * and automatic sync with the server.
+ *
+ * @module contexts/CartContext
+ *
+ * @example
+ * ```tsx
+ * // In a component
+ * const { cartEntries, addToCart, removeFromCart, loading } = useCart();
+ *
+ * await addToCart({
+ *   school: { id: 1, name: 'School A' },
+ *   grade: { id: 1, name: 'Grade 1' },
+ *   items: [{ id: 1, name: 'Notebook', quantity: 2 }]
+ * });
+ * ```
+ */
 'use client';
 
 import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
@@ -5,6 +26,10 @@ import * as api from '@/services/api';
 import { CartEntryPayload, CartItem } from '@/types/cart';
 import { useAuth } from './AuthContext';
 
+/**
+ * Represents a cart entry stored in the application.
+ * Extended from CartEntryPayload with unique ID and timestamp.
+ */
 export interface CartEntry {
     id: string;
     timestamp: number;

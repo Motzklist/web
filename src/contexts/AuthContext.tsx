@@ -1,8 +1,30 @@
+/**
+ * @fileoverview Authentication Context Provider
+ *
+ * Provides authentication state and actions throughout the application.
+ * Uses the backend API for session management with localStorage fallback
+ * for session persistence across page reloads.
+ *
+ * @module contexts/AuthContext
+ *
+ * @example
+ * ```tsx
+ * // In a component
+ * const { isAuthenticated, login, logout, username } = useAuth();
+ *
+ * if (!isAuthenticated) {
+ *   await login('user@example.com', 'password');
+ * }
+ * ```
+ */
 'use client';
 
 import {createContext, useContext, useState, useEffect, ReactNode} from 'react';
 import * as api from '@/services/api';
 
+/**
+ * Shape of the authentication context value.
+ */
 interface AuthContextType {
     isAuthenticated: boolean;
     userid: string | null;

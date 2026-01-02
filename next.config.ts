@@ -1,15 +1,23 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-    // Other configurations will go here
-    // e.g., output: 'standalone' if using advanced Docker builds
+import type { NextConfig } from 'next';
 
-    // Explicitly define environment variables accessible during build
-    // The key here is to assert the existence of process.env for TypeScript
+/**
+ * Next.js Configuration
+ *
+ * @see https://nextjs.org/docs/app/api-reference/config/next-config-js
+ */
+const nextConfig: NextConfig = {
+    // Enable standalone output for optimized Docker production builds
+    // This creates a self-contained build that doesn't require node_modules
+    output: 'standalone',
+
+    // Environment variables accessible at build time and runtime
+    // NEXT_PUBLIC_* variables are automatically exposed to the browser
     env: {
-        // Expose the variable set by Docker Compose/Shell to the Next.js build process
         NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
     },
+
+    // Disable x-powered-by header for security
+    poweredByHeader: false,
 };
 
-// Use the standard way to export in a Next.js TypeScript config file
-module.exports = nextConfig;
+export default nextConfig;
