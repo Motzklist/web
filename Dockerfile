@@ -39,7 +39,6 @@ RUN npm run build
 # ----------------------------------------------------------------------
 # Stage 3: Production Server (Minimal Image)
 # ----------------------------------------------------------------------
-# ... (Rest of Stage 3 remains the same)
 FROM node:20-alpine AS runner
 ENV NODE_ENV production
 ENV PORT 3000
@@ -49,9 +48,9 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/package.json ./package.json
 
-# CRITICAL FIX (Check for 'src' folder):
-# If your next.config.ts or other root-level files are required at runtime,
-# you may also need to copy those, but package.json is the primary fix for the error.
+# Pass through NEXT_PUBLIC_API_URL from build to runtime
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 RUN npm install --omit=dev
 CMD ["npm", "start"]
