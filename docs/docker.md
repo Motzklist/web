@@ -2,18 +2,34 @@
 
 The Dockerfile supports two targets: **development** (with hot reload) and **production** (optimized).
 
-## Quick Reference
+## Development
 
-| Target | Build | Run |
-|--------|-------|-----|
-| Development | `docker build --target development -t motzkin-web:dev .` | `docker run -p 3000:3000 -v ${PWD}/src:/app/src motzkin-web:dev` |
-| Production | `docker build --target production -t motzkin-web:prod .` | `docker run -p 3000:3000 motzkin-web:prod` |
+Build and run with hot reload:
 
-## Environment Variables
+**Linux/macOS:**
+```bash
+docker build --target development -t motzkin-web:dev .
+docker run -p 3000:3000 -v $(pwd)/src:/app/src motzkin-web:dev
+```
 
-Pass `NEXT_PUBLIC_API_URL` at runtime:
+**Windows PowerShell:**
+```powershell
+docker build --target development -t motzkin-web:dev .
+docker run -p 3000:3000 -v "${PWD}/src:/app/src" motzkin-web:dev
+```
+
+**Windows CMD:**
+```cmd
+docker build --target development -t motzkin-web:dev .
+docker run -p 3000:3000 -v "%cd%/src:/app/src" motzkin-web:dev
+```
+
+## Production
+
+Build and run optimized image:
 
 ```bash
+docker build --target production -t motzkin-web:prod .
 docker run -p 3000:3000 -e NEXT_PUBLIC_API_URL=https://api.example.com motzkin-web:prod
 ```
 
@@ -26,4 +42,3 @@ docker run -p 3000:3000 -e NEXT_PUBLIC_API_URL=https://api.example.com motzkin-w
 | Can't reach API | Use `host.docker.internal` instead of `localhost` |
 
 For full-stack development, use Docker-Compose from the main project repository.
-
