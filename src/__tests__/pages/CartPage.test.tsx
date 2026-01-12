@@ -9,31 +9,47 @@ import '@testing-library/jest-dom';
 
 // Mock next/link
 jest.mock('next/link', () => {
-    return function MockLink({ children, href }: { children: React.ReactNode; href: string }) {
+    function MockLink({ children, href }: { children: React.ReactNode; href: string }) {
         return <a href={href}>{children}</a>;
-    };
+    }
+    MockLink.displayName = 'MockLink';
+    return MockLink;
 });
 
 // Mock next/image
 jest.mock('next/image', () => {
-    return function MockImage({ src, alt, ...props }: { src: string; alt: string }) {
+    function MockImage({ src, alt, ...props }: { src: string; alt: string; [key: string]: unknown }) {
+        // eslint-disable-next-line @next/next/no-img-element
         return <img src={src} alt={alt} {...props} />;
-    };
+    }
+    MockImage.displayName = 'MockImage';
+    return MockImage;
 });
 
 // Mock Layout component
 jest.mock('@/components/Layout', () => {
-    return function MockLayout({ children }: { children: React.ReactNode }) {
+    function MockLayout({ children }: { children: React.ReactNode }) {
         return <div>{children}</div>;
-    };
+    }
+    MockLayout.displayName = 'MockLayout';
+    return MockLayout;
 });
 
 // Cart mock functions
 const mockRemoveFromCart = jest.fn();
 const mockClearCart = jest.fn();
 
+// Cart entry type for mocking
+interface MockCartEntry {
+    id: string;
+    timestamp: number;
+    school: { id: number; name: string };
+    grade: { id: number; name: string };
+    items: { id: number; name: string; quantity: number }[];
+}
+
 // This will be set by each test
-let mockCartEntries: any[] = [];
+let mockCartEntries: MockCartEntry[] = [];
 
 jest.mock('@/contexts/CartContext', () => ({
     useCart: () => ({

@@ -5,16 +5,16 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { useCart } from '@/contexts/CartContext';
 
 // Test component that uses the cart context
 function TestCartHookUsage() {
-    const { useCart } = require('@/contexts/CartContext');
-
     try {
         const cart = useCart();
-        return <div data-testid="cart-result">Has cart context</div>;
-    } catch (error: any) {
-        return <div data-testid="cart-error">{error.message}</div>;
+        return <div data-testid="cart-result">Has cart context: {cart.cartEntries.length} items</div>;
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        return <div data-testid="cart-error">{message}</div>;
     }
 }
 

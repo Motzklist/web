@@ -17,16 +17,21 @@ jest.mock('next/navigation', () => ({
 
 // Mock next/link
 jest.mock('next/link', () => {
-    return ({ children, href }: { children: React.ReactNode; href: string }) => (
-        <a href={href}>{children}</a>
-    );
+    function MockLink({ children, href }: { children: React.ReactNode; href: string }) {
+        return <a href={href}>{children}</a>;
+    }
+    MockLink.displayName = 'MockLink';
+    return MockLink;
 });
 
 // Mock next/image
 jest.mock('next/image', () => {
-    return ({ src, alt, ...props }: { src: string; alt: string }) => (
-        <img src={src} alt={alt} {...props} />
-    );
+    function MockImage({ src, alt, ...props }: { src: string; alt: string; [key: string]: unknown }) {
+        // eslint-disable-next-line @next/next/no-img-element
+        return <img src={src} alt={alt} {...props} />;
+    }
+    MockImage.displayName = 'MockImage';
+    return MockImage;
 });
 
 // Auth mock state
@@ -41,7 +46,7 @@ jest.mock('@/contexts/AuthContext', () => ({
 }));
 
 // Cart mock state
-let mockCartEntries: any[] = [];
+let mockCartEntries: { id: string; items: unknown[] }[] = [];
 
 jest.mock('@/contexts/CartContext', () => ({
     useCart: () => ({

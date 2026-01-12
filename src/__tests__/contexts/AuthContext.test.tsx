@@ -6,17 +6,16 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 // We'll create a simple test component
 function TestAuthHookUsage() {
-    // This import is dynamic to avoid issues with mocking
-    const { useAuth } = require('@/contexts/AuthContext');
-
     try {
         const auth = useAuth();
-        return <div data-testid="auth-result">Has auth context</div>;
-    } catch (error: any) {
-        return <div data-testid="auth-error">{error.message}</div>;
+        return <div data-testid="auth-result">Has auth context: {auth.isAuthenticated ? 'yes' : 'no'}</div>;
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        return <div data-testid="auth-error">{message}</div>;
     }
 }
 
