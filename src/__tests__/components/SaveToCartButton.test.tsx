@@ -67,7 +67,7 @@ describe('SaveToCartButton', () => {
 
             render(<SaveToCartButton {...props} />);
 
-            expect(screen.getByText(/1 items/i)).toBeInTheDocument();
+            expect(screen.getByText(/1 item/i)).toBeInTheDocument();
         });
     });
 

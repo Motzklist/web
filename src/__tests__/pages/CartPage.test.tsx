@@ -218,14 +218,12 @@ describe('CartPage', () => {
             const removeButton = screen.getByTitle(/remove from cart/i);
             fireEvent.click(removeButton);
 
-            // The dialog has a "Remove" button that is the confirm action
-            const allButtons = screen.getAllByRole('button');
-            const dialogConfirmButton = allButtons.find(
-                btn => btn.textContent === 'Remove' && btn.className.includes('bg-red-600')
-            );
-            if (dialogConfirmButton) {
-                fireEvent.click(dialogConfirmButton);
-            }
+            // The dialog has a "Remove" button - get all buttons with "Remove" text
+            // and click the one that's the dialog confirm button (not the X icon)
+            const removeButtons = screen.getAllByRole('button', { name: /remove/i });
+            // The dialog confirm button is the last one (the X button has title, not name)
+            const dialogConfirmButton = removeButtons[removeButtons.length - 1];
+            fireEvent.click(dialogConfirmButton);
 
             expect(mockRemoveFromCart).toHaveBeenCalledWith('entry-1');
         });

@@ -139,6 +139,9 @@ describe('Toast', () => {
                 jest.advanceTimersByTime(10);
             });
 
+            // Store call count before hiding
+            const callCountBeforeHide = mockOnClose.mock.calls.length;
+
             // Hide the toast
             rerender(
                 <Toast
@@ -154,8 +157,8 @@ describe('Toast', () => {
                 jest.advanceTimersByTime(5000);
             });
 
-            // onClose should not be called because toast was hidden
-            // (it might have been called once during cleanup, depending on implementation)
+            // onClose should not be called again after toast was hidden (timers were cleared)
+            expect(mockOnClose.mock.calls.length).toBe(callCountBeforeHide);
         });
 
         it('should clear timers on unmount', () => {
