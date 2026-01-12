@@ -103,11 +103,13 @@ describe('ConfirmDialog', () => {
             expect(mockOnCancel).toHaveBeenCalledTimes(1);
         });
 
-        it('should not respond to other keys', () => {
+        it('should not respond to Enter or Space keys', () => {
             render(<ConfirmDialog {...defaultProps} />);
 
             fireEvent.keyDown(document, { key: 'Enter' });
             fireEvent.keyDown(document, { key: 'Space' });
+            fireEvent.keyDown(document, { key: 'a' });
+            fireEvent.keyDown(document, { key: 'Tab' });
 
             expect(mockOnCancel).not.toHaveBeenCalled();
             expect(mockOnConfirm).not.toHaveBeenCalled();

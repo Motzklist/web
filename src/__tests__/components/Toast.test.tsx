@@ -172,6 +172,9 @@ describe('Toast', () => {
                 jest.advanceTimersByTime(10);
             });
 
+            // Store the call count before unmount
+            const callCountBeforeUnmount = mockOnClose.mock.calls.length;
+
             unmount();
 
             // Advance time after unmount
@@ -179,7 +182,8 @@ describe('Toast', () => {
                 jest.advanceTimersByTime(5000);
             });
 
-            // Should not throw errors
+            // onClose should not have been called again after unmount (timers were cleared)
+            expect(mockOnClose.mock.calls.length).toBe(callCountBeforeUnmount);
         });
     });
 });

@@ -127,12 +127,13 @@ describe('CartPage', () => {
             expect(screen.getByText('Eraser')).toBeInTheDocument();
         });
 
-        it('should display item quantities', () => {
+        it('should display item quantities with multiplication symbol format', () => {
             render(<CartPage />);
 
-            expect(screen.getByText('×5')).toBeInTheDocument();
-            expect(screen.getByText('×10')).toBeInTheDocument();
-            expect(screen.getByText('×3')).toBeInTheDocument();
+            // Quantities are displayed in "×N" format
+            expect(screen.getByText('×5')).toBeInTheDocument();   // Notebook: 5
+            expect(screen.getByText('×10')).toBeInTheDocument();  // Pencil: 10
+            expect(screen.getByText('×3')).toBeInTheDocument();   // Eraser: 3
         });
 
         it('should display cart summary', () => {
@@ -253,26 +254,27 @@ describe('CartPage', () => {
         it('should call clearCart when confirmed', () => {
             render(<CartPage />);
 
-            const clearButton = screen.getByRole('button', { name: /clear all/i });
-            fireEvent.click(clearButton);
+            // Click "Clear All" button in the header to open dialog
+            const clearAllButton = screen.getByRole('button', { name: /clear all/i });
+            fireEvent.click(clearAllButton);
 
-            // Find the confirm button in the dialog - it should have text containing "Clear" and be in the dialog
+            // Dialog should now be open - find buttons
+            // The dialog has: Cancel and "Clear All" (confirm button)
+            // We need to click the confirm button in the dialog, not the original Clear All
             const allButtons = screen.getAllByRole('button');
-            // The dialog confirm button has specific styling
-            const confirmButton = allButtons.find(
-                btn => btn.textContent?.includes('Clear') && btn.className.includes('bg-red-600')
+
+            // Find buttons with "Clear All" text - there should be 2 (header + dialog)
+            const clearAllButtons = allButtons.filter(btn =>
+                btn.textContent?.toLowerCase().includes('clear all') ||
+                btn.textContent?.toLowerCase().includes('clear')
             );
-            if (confirmButton) {
-                fireEvent.click(confirmButton);
-                expect(mockClearCart).toHaveBeenCalled();
-            } else {
-                // Fallback: click first button with "Clear" text that's not the Clear All button
-                const clearButtons = allButtons.filter(btn => btn.textContent?.includes('Clear'));
-                if (clearButtons.length > 1) {
-                    fireEvent.click(clearButtons[1]); // The second one should be the confirm
-                }
-                expect(mockClearCart).toHaveBeenCalled();
+
+            // Click the last one (the one in the dialog)
+            if (clearAllButtons.length >= 2) {
+                fireEvent.click(clearAllButtons[clearAllButtons.length - 1]);
             }
+
+            expect(mockClearCart).toHaveBeenCalled();
         });
 
         it('should close dialog when cancelled on clear cart', () => {
@@ -333,8 +335,11 @@ describe('CartPage', () => {
 
             render(<CartPage />);
 
-            // Should show "Added" with date
+            // Should show "Added" with the formatted date (Jan 15, 2024)
             expect(screen.getByText(/added/i)).toBeInTheDocument();
+            expect(screen.getByText(/jan/i)).toBeInTheDocument();
+            expect(screen.getByText(/15/)).toBeInTheDocument();
+            expect(screen.getByText(/2024/)).toBeInTheDocument();
         });
     });
 });

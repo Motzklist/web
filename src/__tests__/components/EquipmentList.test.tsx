@@ -110,9 +110,10 @@ describe('EquipmentList', () => {
 
             render(<EquipmentList {...propsWithUnselected} />);
 
-            // Items 1 and 4 should appear with lower opacity (unselected style)
-            const itemRows = document.querySelectorAll('.opacity-60');
-            expect(itemRows.length).toBe(2);
+            // Only 2 items (2 and 3) should be in the selected state (with checkmarks),
+            // implying that the remaining items are unselected.
+            const checkmarks = document.querySelectorAll('svg');
+            expect(checkmarks.length).toBe(2);
         });
     });
 
